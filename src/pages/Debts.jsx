@@ -1,14 +1,15 @@
 import CurrencyInput from '../components/CurrencyInput'
 import { useState, useEffect } from 'react'
 import { useActiveDate } from '../context/ActiveDateContext'
-import { getByDate, create, update } from '../services/debtService'
-import { getAccountsByDate, createTransaction, getTransactionsByCategory } from '../services/bankService'
+import { getByDate, create, update, remove } from '../services/debtService'
+import { getAccountsByDate, createTransaction, getTransactionsByCategory, deleteTransaction } from '../services/bankService'
 import PageHeader from '../components/PageHeader'
 import SummaryCard from '../components/SummaryCard'
 import SectionCard from '../components/SectionCard'
 import PremiumTable from '../components/PremiumTable'
 import Badge from '../components/Badge'
 import { formatCurrency } from '../utils/format'; import { calculateTotal } from '../utils/calculations'
+import ConfirmModal from '../components/ConfirmModal'
 import { ArrowUpFromLine, Users, CheckCircle, Search, History } from 'lucide-react'
 
 export default function Debts() {
@@ -19,9 +20,12 @@ export default function Debts() {
 
   const [form, setForm] = useState({ creditor_name: '', description: '', amount: '', paid_amount: 0, status: 'Belum Dibayar', bank_account_id: '' })
   const [paymentForm, setPaymentForm] = useState({ id: null, amount: '', bank_account_id: '' })
+  const [isEditing, setIsEditing] = useState(false)
+  const [editId, setEditId] = useState(null)
   
   const [historyData, setHistoryData] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   const loadData = async () => {
     setLoading(true)
@@ -40,9 +44,72 @@ export default function Debts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await create({ ...form, date: dateStr, amount: Number(form.amount) })
-    setForm({ ...form, creditor_name: '', description: '', amount: '' })
+    if (isEditing) {
+      await update(editId, { 
+        creditor_name: form.creditor_name, 
+        description: form.description, 
+        amount: Number(form.amount),
+        paid_amount: Number(form.paid_amount),
+        status: form.status
+      })
+      setIsEditing(false)
+      setEditId(null)
+    } else {
+      await create({ ...form, date: dateStr, amount: Number(form.amount) })
+    }
+    setForm({ creditor_name: '', description: '', amount: '', paid_amount: 0, status: 'Belum Dibayar', bank_account_id: '' })
     loadData()
+  }
+  
+  const handleEditClick = (item) => {
+    setIsEditing(true)
+    setEditId(item.id)
+    setForm({
+      creditor_name: item.creditor_name,
+      description: item.description,
+      amount: item.amount,
+      paid_amount: item.paid_amount,
+      status: item.status,
+      bank_account_id: ''
+    })
+  }
+  
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditId(null)
+    setForm({ creditor_name: '', description: '', amount: '', paid_amount: 0, status: 'Belum Dibayar', bank_account_id: '' })
+  }
+
+  const handleDelete = (item) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Hapus Hutang',
+      message: `Yakin ingin menghapus data hutang ke ${item.creditor_name}? Histori pembayaran terkait hutang ini di kas/bank tidak akan terhapus otomatis.`,
+      onConfirm: async () => {
+        await remove(item.id)
+        loadData()
+      }
+    })
+  }
+
+  const handleDeleteHistory = (log) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Hapus Histori Pembayaran',
+      message: `Yakin ingin menghapus histori pembayaran sebesar ${formatCurrency(log.amount)}? Jika ini pembayaran baru, total yang sudah dibayar pada hutang akan otomatis dikurangi.`,
+      onConfirm: async () => {
+        if (log.related_source_id) {
+          const debt = data.find(d => d.id === log.related_source_id)
+          if (debt) {
+            const newPaid = Math.max(0, Number(debt.paid_amount) - Number(log.amount))
+            const status = newPaid >= Number(debt.amount) ? 'Lunas' : (newPaid > 0 ? 'Sebagian' : 'Belum Dibayar')
+            await update(debt.id, { paid_amount: newPaid, status })
+          }
+        }
+        await deleteTransaction(log.id)
+        loadData()
+      }
+    })
   }
 
   const handlePayment = async (e) => {
@@ -57,7 +124,8 @@ export default function Debts() {
     await createTransaction({
       date: dateStr, bank_account_id: null,
       transaction_type: 'Keluar', category: 'Pembayaran Hutang',
-      description: `Bayar hutang ke ${item.creditor_name}`, amount: payAmt
+      description: `Bayar hutang ke ${item.creditor_name}`, amount: payAmt,
+      related_source: 'debts', related_source_id: item.id
     })
     
     setPaymentForm({ id: null, amount: '', bank_account_id: '' })
@@ -71,21 +139,35 @@ export default function Debts() {
   return (
     <div className="space-y-6">
       <PageHeader title="Hutang (Tagihan ke Supplier)" />
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <SummaryCard title="Total Hutang" value={formatCurrency(total)} icon={ArrowUpFromLine} colorClass="text-red-600" bgClass="bg-red-50" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <SummaryCard title="Total Hutang (Sisa)" value={formatCurrency(sisa)} icon={ArrowUpFromLine} colorClass="text-red-600" bgClass="bg-red-50" />
         <SummaryCard title="Sudah Dibayar" value={formatCurrency(paid)} icon={CheckCircle} colorClass="text-green-600" bgClass="bg-green-50" />
-        <SummaryCard title="Sisa Hutang" value={formatCurrency(sisa)} icon={ArrowUpFromLine} colorClass="text-orange-600" bgClass="bg-orange-50" />
         <SummaryCard title="Jumlah Supplier" value={data.length} icon={Users} colorClass="text-indigo-600" bgClass="bg-indigo-50" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
-          <SectionCard title="Tambah Hutang">
+          <SectionCard title={isEditing ? "Edit Hutang" : "Tambah Hutang"}>
             <form onSubmit={handleSubmit} className="space-y-3">
               <input required type="text" placeholder="Nama Supplier" value={form.creditor_name} onChange={e=>setForm({...form, creditor_name: e.target.value})} className="w-full p-2 border rounded-lg" />
               <input required type="text" placeholder="Deskripsi" value={form.description} onChange={e=>setForm({...form, description: e.target.value})} className="w-full p-2 border rounded-lg" />
               <CurrencyInput required placeholder="Nominal" value={form.amount} onChange={e=>setForm({...form, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
-              <button className="w-full bg-blue-600 text-white p-2 rounded-lg">Simpan</button>
+              {isEditing && (
+                <>
+                  <CurrencyInput required placeholder="Jumlah Terbayar" value={form.paid_amount} onChange={e=>setForm({...form, paid_amount: e.target.value})} className="w-full p-2 border rounded-lg" />
+                  <select value={form.status} onChange={e=>setForm({...form, status: e.target.value})} className="w-full p-2 border rounded-lg">
+                    <option value="Belum Dibayar">Belum Dibayar</option>
+                    <option value="Sebagian">Sebagian</option>
+                    <option value="Lunas">Lunas</option>
+                  </select>
+                </>
+              )}
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-blue-600 text-white p-2 rounded-lg">{isEditing ? 'Update' : 'Simpan'}</button>
+                {isEditing && (
+                  <button type="button" onClick={handleCancelEdit} className="px-4 bg-gray-100 text-gray-700 p-2 rounded-lg font-medium hover:bg-gray-200">Batal</button>
+                )}
+              </div>
             </form>
           </SectionCard>
           
@@ -107,18 +189,25 @@ export default function Debts() {
         <div className="lg:col-span-2">
           <SectionCard title="Data Hutang">
              <PremiumTable 
-                columns={['Supplier', 'Deskripsi', 'Total', 'Status', 'Aksi']}
+                columns={['Supplier', 'Deskripsi', 'Sisa Tagihan', 'Status', 'Aksi']}
                 data={data}
                 renderRow={item => (
                   <tr key={item.id}>
                     <td className="p-3 text-sm font-medium">{item.creditor_name}</td>
                     <td className="p-3 text-sm">{item.description}</td>
-                    <td className="p-3 text-sm font-bold text-gray-900">{formatCurrency(item.amount)}</td>
+                    <td className="p-3 text-sm font-bold text-gray-900">
+                      {formatCurrency(item.amount - (item.paid_amount || 0))}
+                      <div className="text-[10px] font-normal text-gray-400 mt-0.5">Total: {formatCurrency(item.amount)}</div>
+                    </td>
                     <td className="p-3 text-sm"><Badge status={item.status} /></td>
                     <td className="p-3 text-sm">
-                      {item.status !== 'Lunas' && (
-                        <button onClick={() => setPaymentForm({ ...paymentForm, id: item.id })} className="text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded">Bayar</button>
-                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {item.status !== 'Lunas' && (
+                          <button onClick={() => setPaymentForm({ ...paymentForm, id: item.id })} className="text-blue-600 text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors">Bayar</button>
+                        )}
+                        <button onClick={() => handleEditClick(item)} className="text-orange-600 text-xs bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded transition-colors">Edit</button>
+                        <button onClick={() => handleDelete(item)} className="text-red-600 text-xs bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors">Hapus</button>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -157,7 +246,8 @@ export default function Debts() {
                        </div>
                        <div className="text-right">
                          <span className="font-bold text-red-600">{formatCurrency(log.amount)}</span>
-                         <div className="mt-1">
+                         <div className="mt-1 flex gap-2 justify-end">
+                           <button onClick={() => handleDeleteHistory(log)} className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium hover:bg-red-200 transition-colors">Hapus</button>
                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-medium border border-red-100">Pembayaran</span>
                          </div>
                        </div>
@@ -171,6 +261,13 @@ export default function Debts() {
            </div>
         </div>
       </div>
+      <ConfirmModal 
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState({ ...confirmState, isOpen: false })}
+      />
     </div>
   )
 }

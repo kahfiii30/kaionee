@@ -50,3 +50,19 @@ export const getRangeReport = async (startDate, endDate) => {
   if (error) throw error
   return data
 }
+
+export const getGlobalPaymentHistory = async () => {
+  const { data, error } = await supabase
+    .from('bank_transactions')
+    .select(`
+      *,
+      bank_accounts!bank_transactions_bank_account_id_fkey (bank_name)
+    `)
+    .in('category', ['Pembayaran Hutang', 'Pembayaran Piutang'])
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(50)
+    
+  if (error) throw error
+  return data
+}

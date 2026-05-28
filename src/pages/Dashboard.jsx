@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useActiveDate } from '../context/ActiveDateContext'
-import { getDailySummary } from '../services/reportService'
+import { getDailySummary, getGlobalPaymentHistory } from '../services/reportService'
 import PageHeader from '../components/PageHeader'
 import SummaryCard from '../components/SummaryCard'
 import SectionCard from '../components/SectionCard'
 import { formatCurrency } from '../utils/format'
-import { Wallet, Car, ArrowDownToLine, ArrowUpFromLine, TrendingDown, Landmark, DollarSign, Activity } from 'lucide-react'
+import { Wallet, Car, ArrowDownToLine, ArrowUpFromLine, TrendingDown, Landmark, DollarSign, Activity, History } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 
 export default function Dashboard() {
   const { dateStr, isInitializing } = useActiveDate()
   const [data, setData] = useState(null)
+  const [historyData, setHistoryData] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,8 +19,12 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const summary = await getDailySummary(dateStr)
+        const [summary, history] = await Promise.all([
+          getDailySummary(dateStr),
+          getGlobalPaymentHistory()
+        ])
         setData(summary)
+        setHistoryData(history || [])
       } catch (error) {
         console.error('Failed to load dashboard', error)
       } finally {
@@ -163,23 +168,53 @@ export default function Dashboard() {
           </div>
         </SectionCard>
         
+        <SectionCard title="Tracker Histori Hutang & Piutang" delay={0.6}>
+           <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+             {historyData.map(log => (
+               <div key={log.id} className="flex justify-between items-start p-4 bg-white border border-gray-100 shadow-sm rounded-xl hover:border-blue-200 transition-colors">
+                 <div className="flex gap-4">
+                   <div className={`mt-1 p-2 rounded-lg ${log.category === 'Pembayaran Piutang' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                     <History size={18} />
+                   </div>
+                   <div>
+                     <p className="font-bold text-gray-900 text-sm">{log.description}</p>
+                     <p className="text-xs text-gray-500 mt-1">Tanggal Bayar: <span className="font-medium text-gray-700">{log.date}</span></p>
+                     <p className="text-[10px] text-gray-400 mt-0.5">{new Date(log.created_at || log.date).toLocaleString('id-ID')}</p>
+                   </div>
+                 </div>
+                 <div className="text-right">
+                   <span className={`font-bold ${log.category === 'Pembayaran Piutang' ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(log.amount)}</span>
+                   <div className="mt-1">
+                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${log.category === 'Pembayaran Piutang' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                       {log.category.replace('Pembayaran ', '')}
+                     </span>
+                   </div>
+                 </div>
+               </div>
+             ))}
+             {historyData.length === 0 && (
+               <p className="text-sm text-gray-500 italic text-center py-6">Belum ada histori pembayaran hutang atau piutang.</p>
+             )}
+           </div>
+         </SectionCard>
+
         <SectionCard title="Ringkasan Data">
-          <div className="space-y-4">
-             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Total Kendaraan (Ready/Booking)</span>
-                <span className="font-bold text-navy-900">{data.vehicles.filter(v => v.status !== 'Terjual').length} Unit</span>
-             </div>
-             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Invoice Piutang Aktif</span>
-                <span className="font-bold text-navy-900">{data.receivables.filter(r => r.status !== 'Lunas').length} Transaksi</span>
-             </div>
-             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Tagihan Hutang Aktif</span>
-                <span className="font-bold text-navy-900">{data.debts.filter(d => d.status !== 'Lunas').length} Transaksi</span>
-             </div>
-          </div>
-        </SectionCard>
-      </div>
-    </div>
+           <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                 <span className="text-gray-600">Total Kendaraan (Ready/Booking)</span>
+                 <span className="font-bold text-navy-900">{data.vehicles.filter(v => v.status !== 'Terjual').length} Unit</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                 <span className="text-gray-600">Invoice Piutang Aktif</span>
+                 <span className="font-bold text-navy-900">{data.receivables.filter(r => r.status !== 'Lunas').length} Transaksi</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                 <span className="text-gray-600">Tagihan Hutang Aktif</span>
+                 <span className="font-bold text-navy-900">{data.debts.filter(d => d.status !== 'Lunas').length} Transaksi</span>
+              </div>
+           </div>
+         </SectionCard>
+       </div>
+     </div>
   )
 }
