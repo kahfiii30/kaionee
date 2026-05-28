@@ -7,6 +7,7 @@ import SummaryCard from '../components/SummaryCard'
 import SectionCard from '../components/SectionCard'
 import PremiumTable from '../components/PremiumTable'
 import { formatCurrency } from '../utils/format'; import { calculateTotal } from '../utils/calculations'
+import ConfirmModal from '../components/ConfirmModal'
 import { TrendingDown, Trash2 } from 'lucide-react'
 
 export default function Losses() {
@@ -14,6 +15,7 @@ export default function Losses() {
   const [losses, setLosses] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ category: 'Diskon', description: '', amount: '' })
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   const loadData = async () => {
     setLoading(true)
@@ -29,6 +31,23 @@ export default function Losses() {
     await create({ ...form, date: dateStr, amount: Number(form.amount) })
     setForm({ ...form, description: '', amount: '' })
     loadData()
+  }
+
+  const handleDelete = (id) => {
+    setConfirmState({
+      isOpen: true,
+      title: 'Hapus Kerugian',
+      message: 'Apakah Anda yakin ingin menghapus data kerugian ini?',
+      onConfirm: async () => {
+        try {
+          await remove(id)
+          loadData()
+        } catch (e) {
+          console.error(e)
+          alert("Gagal menghapus data")
+        }
+      }
+    })
   }
 
   const total = calculateTotal(losses, 'amount')
@@ -68,7 +87,7 @@ export default function Losses() {
                   <td className="p-3 text-sm">{l.source}</td>
                   <td className="p-3 text-sm font-bold text-red-600">{formatCurrency(l.amount)}</td>
                   <td className="p-3 text-sm">
-                    <button onClick={async () => { await remove(l.id); loadData() }} className="text-red-500"><Trash2 size={16} /></button>
+                    <button onClick={() => handleDelete(l.id)} className="text-red-500"><Trash2 size={16} /></button>
                   </td>
                 </tr>
               )}
@@ -76,6 +95,14 @@ export default function Losses() {
           </SectionCard>
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState({ ...confirmState, isOpen: false })}
+      />
     </div>
   )
 }

@@ -89,6 +89,43 @@ export const addCapitalLog = async (vehicleId, vehicleGroupId, payload) => {
   return newLog
 }
 
+export const updateCapitalLog = async (logId, vehicleId, payload) => {
+  // 1. Get old log amount
+  const { data: oldLog, error: oldErr } = await supabase.from('vehicle_capital_logs').select('amount').eq('id', logId).single()
+  if (oldErr) throw oldErr
+
+  // 2. Update the log
+  const { data: newLog, error } = await supabase
+    .from('vehicle_capital_logs')
+    .update(payload)
+    .eq('id', logId)
+    .select()
+    .single()
+  
+  if (error) throw error
+
+  // 3. Update vehicle's purchase_price
+  const { data: vehicle, error: fetchErr } = await supabase
+    .from('vehicle_stocks')
+    .select('purchase_price')
+    .eq('id', vehicleId)
+    .single()
+  
+  if (fetchErr) throw fetchErr
+
+  const diff = Number(payload.amount) - Number(oldLog.amount)
+  const newPrice = Number(vehicle.purchase_price) + diff
+
+  const { error: updateErr } = await supabase
+    .from('vehicle_stocks')
+    .update({ purchase_price: newPrice })
+    .eq('id', vehicleId)
+
+  if (updateErr) throw updateErr
+
+  return newLog
+}
+
 export const removeCapitalLog = async (logId, vehicleId, logAmount) => {
   // 1. Delete the log
   const { error } = await supabase.from('vehicle_capital_logs').delete().eq('id', logId)

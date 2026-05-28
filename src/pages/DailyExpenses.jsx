@@ -8,6 +8,7 @@ import SummaryCard from '../components/SummaryCard'
 import SectionCard from '../components/SectionCard'
 import PremiumTable from '../components/PremiumTable'
 import { formatCurrency } from '../utils/format'
+import ConfirmModal from '../components/ConfirmModal'
 import { Wallet, Receipt, CreditCard, Trash2 } from 'lucide-react'
 
 export default function DailyExpenses() {
@@ -17,6 +18,7 @@ export default function DailyExpenses() {
   const [loading, setLoading] = useState(true)
 
   const [form, setForm] = useState({ category: 'Operasional', description: '', amount: '', payment_method: 'Tunai', bank_account_id: '' })
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   const loadData = async () => {
     setLoading(true)
@@ -48,18 +50,6 @@ export default function DailyExpenses() {
         amount: Number(form.amount),
         payment_method: form.payment_method
       })
-
-      if (form.payment_method === 'Transfer' && form.bank_account_id) {
-        await createTransaction({
-          date: dateStr,
-          bank_account_id: form.bank_account_id,
-          transaction_type: 'Keluar',
-          category: 'Pengeluaran Harian',
-          description: form.description,
-          amount: Number(form.amount)
-        })
-      }
-
       setForm({ ...form, description: '', amount: '' })
       loadData()
     } catch (err) {
@@ -69,10 +59,20 @@ export default function DailyExpenses() {
   }
 
   const handleDelete = async (id) => {
-    if (confirm('Hapus pengeluaran ini?')) {
-      await remove(id)
-      loadData()
-    }
+    setConfirmState({
+      isOpen: true,
+      title: 'Hapus Pengeluaran',
+      message: 'Apakah Anda yakin ingin menghapus catatan pengeluaran ini?',
+      onConfirm: async () => {
+        try {
+          await remove(id)
+          loadData()
+        } catch (e) {
+          console.error(e)
+          alert("Gagal menghapus pengeluaran")
+        }
+      }
+    })
   }
 
   const totalAmount = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
@@ -84,14 +84,14 @@ export default function DailyExpenses() {
       <PageHeader title="Pengeluaran Harian" description="Catat operasional harian." />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <SummaryCard title="Total Pengeluaran" value={formatCurrency(totalAmount)} icon={Wallet} />
-        <SummaryCard title="Jumlah Transaksi" value={expenses.length} icon={Receipt} colorClass="text-indigo-600" bgClass="bg-indigo-50" />
-        <SummaryCard title="Rata-rata Transaksi" value={formatCurrency(expenses.length ? totalAmount / expenses.length : 0)} icon={CreditCard} colorClass="text-emerald-600" bgClass="bg-emerald-50" />
+        <SummaryCard title="Total Pengeluaran" value={formatCurrency(totalAmount)} icon={Wallet} delay={0.1} />
+        <SummaryCard title="Jumlah Transaksi" value={expenses.length} icon={Receipt} colorClass="text-indigo-600" bgClass="bg-indigo-50" delay={0.2} />
+        <SummaryCard title="Rata-rata Transaksi" value={formatCurrency(expenses.length ? totalAmount / expenses.length : 0)} icon={CreditCard} colorClass="text-emerald-600" bgClass="bg-emerald-50" delay={0.3} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <SectionCard title="Tambah Pengeluaran">
+          <SectionCard title="Tambah Pengeluaran" delay={0.2}>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
@@ -110,38 +110,21 @@ export default function DailyExpenses() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
                 <CurrencyInput required min="0" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="w-full border-gray-300 rounded-lg shadow-sm p-2 border" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Metode</label>
-                <select value={form.payment_method} onChange={e => setForm({...form, payment_method: e.target.value})} className="w-full border-gray-300 rounded-lg shadow-sm p-2 border">
-                  <option value="Tunai">Tunai</option>
-                  <option value="Transfer">Transfer</option>
-                </select>
-              </div>
-              {form.payment_method === 'Transfer' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rekening Bank</label>
-                  <select required value={form.bank_account_id} onChange={e => setForm({...form, bank_account_id: e.target.value})} className="w-full border-gray-300 rounded-lg shadow-sm p-2 border">
-                    <option value="">-- Pilih Bank --</option>
-                    {banks.map(b => <option key={b.id} value={b.id}>{b.bank_name}</option>)}
-                  </select>
-                </div>
-              )}
               <button type="submit" className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700">Simpan</button>
             </form>
           </SectionCard>
         </div>
         
         <div className="lg:col-span-2">
-          <SectionCard title="Data Pengeluaran">
+          <SectionCard title="Data Pengeluaran" delay={0.4}>
             {loading ? <p>Loading data...</p> : (
               <PremiumTable 
-                columns={['Kategori', 'Deskripsi', 'Metode', 'Nominal', 'Aksi']}
+                columns={['Kategori', 'Deskripsi', 'Nominal', 'Aksi']}
                 data={expenses}
                 renderRow={(item) => (
                   <tr key={item.id}>
                     <td className="px-4 py-3 text-sm">{item.category}</td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.description}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{item.payment_method}</td>
                     <td className="px-4 py-3 text-sm font-semibold">{formatCurrency(item.amount)}</td>
                     <td className="px-4 py-3 text-sm">
                       <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
@@ -153,6 +136,14 @@ export default function DailyExpenses() {
           </SectionCard>
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={confirmState.onConfirm}
+        onCancel={() => setConfirmState({ ...confirmState, isOpen: false })}
+      />
     </div>
   )
 }

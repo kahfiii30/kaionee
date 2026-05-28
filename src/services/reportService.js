@@ -8,14 +8,16 @@ export const getDailySummary = async (date) => {
     receivablesRes,
     debtsRes,
     lossesRes,
-    banksRes
+    banksRes,
+    globalTxsRes
   ] = await Promise.all([
     supabase.from('daily_expenses').select('amount').eq('date', date),
     supabase.from('vehicle_stocks').select('vehicle_type, status, estimated_sell_price').eq('date', date),
     supabase.from('receivables').select('amount, paid_amount, status').eq('date', date),
     supabase.from('debts').select('amount, paid_amount, status').eq('date', date),
     supabase.from('losses').select('amount').eq('date', date),
-    supabase.from('bank_accounts').select('closing_balance').eq('date', date)
+    supabase.from('bank_accounts').select('closing_balance').eq('date', date),
+    supabase.from('bank_transactions').select('transaction_type, amount').eq('date', date).is('bank_account_id', null)
   ])
 
   return {
@@ -24,7 +26,8 @@ export const getDailySummary = async (date) => {
     receivables: receivablesRes.data || [],
     debts: debtsRes.data || [],
     losses: lossesRes.data || [],
-    banks: banksRes.data || []
+    banks: banksRes.data || [],
+    globalTransactions: globalTxsRes.data || []
   }
 }
 

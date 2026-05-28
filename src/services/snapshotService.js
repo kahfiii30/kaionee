@@ -88,5 +88,15 @@ const copyDataFromPreviousDate = async (prevDate, newDate) => {
     await supabase.from('debts').insert(newDebts)
   }
 
-  // Note: We DO NOT copy daily_expenses, losses, or bank_transactions.
+  // 5. Copy losses
+  const { data: losses } = await supabase.from('losses').select('*').eq('date', prevDate)
+  if (losses && losses.length > 0) {
+    const newLosses = losses.map(l => {
+      const { id, created_at, updated_at, date, ...rest } = l
+      return { ...rest, date: newDate }
+    })
+    await supabase.from('losses').insert(newLosses)
+  }
+
+  // Note: We DO NOT copy daily_expenses or bank_transactions.
 }

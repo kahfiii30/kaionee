@@ -23,6 +23,12 @@ export const updateAccount = async (id, payload) => {
 }
 
 export const deleteAccount = async (id) => {
+  // Safe cascade: Delete related transactions first to prevent foreign key constraint errors
+  await supabase.from('bank_transactions').delete().or(`bank_account_id.eq.${id},related_account_id.eq.${id}`)
+  
+  // Safe cascade: Unlink future snapshots that reference this account
+  await supabase.from('bank_accounts').update({ created_from_id: null }).eq('created_from_id', id)
+  
   const { error } = await supabase.from('bank_accounts').delete().eq('id', id)
   if (error) throw error
 }
@@ -30,8 +36,17 @@ export const deleteAccount = async (id) => {
 export const getTransactionsByDate = async (date) => {
   const { data, error } = await supabase.from('bank_transactions').select(`
     *,
-    bank_accounts (bank_name, account_number)
+    bank_accounts!bank_transactions_bank_account_id_fkey (bank_name, account_number)
   `).eq('date', date).order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export const getTransactionsByCategory = async (category) => {
+  const { data, error } = await supabase.from('bank_transactions').select(`
+    *,
+    bank_accounts!bank_transactions_bank_account_id_fkey (bank_name)
+  `).eq('category', category).order('date', { ascending: false }).order('created_at', { ascending: false })
   if (error) throw error
   return data
 }
