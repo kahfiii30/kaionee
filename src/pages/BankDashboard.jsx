@@ -1,3 +1,4 @@
+import CurrencyInput from '../components/CurrencyInput'
 import { useState, useEffect } from 'react'
 import { useActiveDate } from '../context/ActiveDateContext'
 import { getAccountsByDate, getTransactionsByDate, createAccount, createTransaction, createTransfer } from '../services/bankService'
@@ -73,7 +74,7 @@ export default function BankDashboard() {
              <form onSubmit={handleAccountSubmit} className="space-y-3">
                <input required type="text" placeholder="Nama Bank (BCA, Kas, dll)" value={accountForm.bank_name} onChange={e=>setAccountForm({...accountForm, bank_name: e.target.value})} className="w-full p-2 border rounded-lg" />
                <input type="text" placeholder="Nomor Rekening" value={accountForm.account_number} onChange={e=>setAccountForm({...accountForm, account_number: e.target.value})} className="w-full p-2 border rounded-lg" />
-               <input required type="number" placeholder="Saldo Awal" value={accountForm.opening_balance} onChange={e=>setAccountForm({...accountForm, opening_balance: e.target.value})} className="w-full p-2 border rounded-lg" />
+               <CurrencyInput required placeholder="Saldo Awal" value={accountForm.opening_balance} onChange={e=>setAccountForm({...accountForm, opening_balance: e.target.value})} className="w-full p-2 border rounded-lg" />
                <button className="w-full bg-blue-600 text-white p-2 rounded-lg">Simpan</button>
              </form>
           </SectionCard>
@@ -88,7 +89,7 @@ export default function BankDashboard() {
                  <option value="Masuk">Mutasi Masuk</option><option value="Keluar">Mutasi Keluar</option>
                </select>
                <input required type="text" placeholder="Deskripsi" value={txForm.description} onChange={e=>setTxForm({...txForm, description: e.target.value})} className="w-full p-2 border rounded-lg" />
-               <input required type="number" placeholder="Nominal" value={txForm.amount} onChange={e=>setTxForm({...txForm, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
+               <CurrencyInput required placeholder="Nominal" value={txForm.amount} onChange={e=>setTxForm({...txForm, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
                <button className="w-full bg-blue-600 text-white p-2 rounded-lg">Simpan Transaksi</button>
              </form>
           </SectionCard>
@@ -103,7 +104,7 @@ export default function BankDashboard() {
                  <option value="">-- Ke Rekening --</option>
                  {accounts.map(a => <option key={a.id} value={a.id}>{a.bank_name}</option>)}
                </select>
-               <input required type="number" placeholder="Nominal Transfer" value={transferForm.amount} onChange={e=>setTransferForm({...transferForm, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
+               <CurrencyInput required placeholder="Nominal Transfer" value={transferForm.amount} onChange={e=>setTransferForm({...transferForm, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
                <input required type="text" placeholder="Deskripsi Transfer" value={transferForm.description} onChange={e=>setTransferForm({...transferForm, description: e.target.value})} className="w-full p-2 border rounded-lg" />
                <button className="w-full bg-blue-600 text-white p-2 rounded-lg flex items-center justify-center gap-2"><ArrowRightLeft size={16} /> Proses Transfer</button>
              </form>

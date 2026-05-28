@@ -1,3 +1,4 @@
+import CurrencyInput from '../components/CurrencyInput'
 import { useState, useEffect } from 'react'
 import { useActiveDate } from '../context/ActiveDateContext'
 import { getByDate, create, remove } from '../services/lossService'
@@ -50,7 +51,7 @@ export default function Losses() {
                 <option value="Lainnya">Lainnya</option>
               </select>
               <input required type="text" placeholder="Deskripsi" value={form.description} onChange={e=>setForm({...form, description: e.target.value})} className="w-full p-2 border rounded-lg" />
-              <input required type="number" placeholder="Nominal" value={form.amount} onChange={e=>setForm({...form, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
+              <CurrencyInput required placeholder="Nominal" value={form.amount} onChange={e=>setForm({...form, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
               <button className="w-full bg-red-600 text-white p-2 rounded-lg">Simpan</button>
             </form>
           </SectionCard>

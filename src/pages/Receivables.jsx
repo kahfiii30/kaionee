@@ -1,3 +1,4 @@
+import CurrencyInput from '../components/CurrencyInput'
 import { useState, useEffect } from 'react'
 import { useActiveDate } from '../context/ActiveDateContext'
 import { getByDate, create, update } from '../services/receivableService'
@@ -76,7 +77,7 @@ export default function Receivables() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <input required type="text" placeholder="Nama Customer" value={form.customer_name} onChange={e=>setForm({...form, customer_name: e.target.value})} className="w-full p-2 border rounded-lg" />
               <input required type="text" placeholder="Deskripsi" value={form.description} onChange={e=>setForm({...form, description: e.target.value})} className="w-full p-2 border rounded-lg" />
-              <input required type="number" placeholder="Nominal" value={form.amount} onChange={e=>setForm({...form, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
+              <CurrencyInput required placeholder="Nominal" value={form.amount} onChange={e=>setForm({...form, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
               <button className="w-full bg-blue-600 text-white p-2 rounded-lg">Simpan</button>
             </form>
           </SectionCard>
@@ -85,7 +86,7 @@ export default function Receivables() {
              <SectionCard title="Terima Pembayaran">
                <form onSubmit={handlePayment} className="space-y-3">
                  <p className="text-sm font-medium">Customer: {data.find(d=>d.id===paymentForm.id)?.customer_name}</p>
-                 <input required type="number" placeholder="Nominal Bayar" value={paymentForm.amount} onChange={e=>setPaymentForm({...paymentForm, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
+                 <CurrencyInput required placeholder="Nominal Bayar" value={paymentForm.amount} onChange={e=>setPaymentForm({...paymentForm, amount: e.target.value})} className="w-full p-2 border rounded-lg" />
                  <select required value={paymentForm.bank_account_id} onChange={e=>setPaymentForm({...paymentForm, bank_account_id: e.target.value})} className="w-full p-2 border rounded-lg">
                     <option value="">-- Pilih Bank --</option>
                     {banks.map(b => <option key={b.id} value={b.id}>{b.bank_name}</option>)}

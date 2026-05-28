@@ -27,6 +27,10 @@ export default function ActiveDatePicker() {
     year: 'numeric'
   })
 
+  const todayStr = new Date().toLocaleDateString('en-CA')
+  const activeStr = activeDate.toLocaleDateString('en-CA')
+  const isToday = activeStr >= todayStr
+
   return (
     <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200 shadow-sm">
       <button 
@@ -48,7 +52,7 @@ export default function ActiveDatePicker() {
 
       <button 
         onClick={handleNextDay}
-        disabled={isInitializing}
+        disabled={isInitializing || isToday}
         className="p-1.5 text-gray-500 hover:text-navy-900 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
       >
         <ChevronRight size={18} />
@@ -58,7 +62,7 @@ export default function ActiveDatePicker() {
 
       <button
         onClick={handleToday}
-        disabled={isInitializing}
+        disabled={isInitializing || isToday}
         className="px-3 py-1.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
       >
         Hari Ini

@@ -21,9 +21,9 @@ const navItems = [
   { name: 'Laporan', path: '/reports', icon: FileText },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   return (
-    <div className="hidden md:flex w-64 flex-col bg-navy-900 text-white shadow-xl">
+    <div className="flex h-full w-64 flex-col bg-navy-900 text-white shadow-xl">
       <div className="flex h-16 items-center px-6 border-b border-navy-800">
         <h1 className="text-xl font-bold tracking-wider text-white">PROJECT 6</h1>
       </div>
@@ -34,6 +34,7 @@ export default function Sidebar() {
             <NavLink
               key={item.name}
               to={item.path}
+              onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
                   isActive 

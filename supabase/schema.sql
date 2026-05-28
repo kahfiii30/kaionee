@@ -46,6 +46,20 @@ CREATE TABLE vehicle_stocks (
   sell_price numeric NOT NULL DEFAULT 0,
   note text NULL,
   created_from_id uuid NULL,
+  vehicle_group_id uuid NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- 3a. vehicle_capital_logs
+CREATE TABLE vehicle_capital_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  vehicle_group_id uuid NOT NULL,
+  date date NOT NULL,
+  investor_name text NOT NULL,
+  description text NOT NULL,
+  amount numeric NOT NULL DEFAULT 0,
+  type text NOT NULL,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -138,6 +152,7 @@ CREATE INDEX idx_bank_accounts_date ON bank_accounts(date);
 CREATE INDEX idx_bank_transactions_date ON bank_transactions(date);
 CREATE INDEX idx_bank_transactions_account_id ON bank_transactions(bank_account_id);
 CREATE INDEX idx_bank_transactions_transfer_group_id ON bank_transactions(transfer_group_id);
+CREATE INDEX idx_vehicle_capital_logs_group_id ON vehicle_capital_logs(vehicle_group_id);
 
 -- Add updated_at triggers
 CREATE TRIGGER set_timestamp_daily_snapshots BEFORE UPDATE ON daily_snapshots FOR EACH ROW EXECUTE PROCEDURE trigger_set_timestamp();

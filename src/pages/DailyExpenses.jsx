@@ -1,3 +1,4 @@
+import CurrencyInput from '../components/CurrencyInput'
 import { useState, useEffect } from 'react'
 import { useActiveDate } from '../context/ActiveDateContext'
 import { getByDate, create, remove } from '../services/expenseService'
@@ -107,7 +108,7 @@ export default function DailyExpenses() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
-                <input type="number" required min="0" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="w-full border-gray-300 rounded-lg shadow-sm p-2 border" />
+                <CurrencyInput required min="0" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="w-full border-gray-300 rounded-lg shadow-sm p-2 border" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Metode</label>

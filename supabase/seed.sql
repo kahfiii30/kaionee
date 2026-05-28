@@ -1,7 +1,7 @@
 -- supabase/seed.sql
 
 -- Clear existing data
-TRUNCATE bank_transactions, bank_accounts, losses, debts, receivables, vehicle_stocks, daily_expenses, daily_snapshots RESTART IDENTITY CASCADE;
+TRUNCATE vehicle_capital_logs, bank_transactions, bank_accounts, losses, debts, receivables, vehicle_stocks, daily_expenses, daily_snapshots RESTART IDENTITY CASCADE;
 
 -- Insert Daily Snapshots
 INSERT INTO daily_snapshots (date) VALUES ('2026-05-27'), ('2026-05-28');
@@ -17,11 +17,19 @@ INSERT INTO bank_accounts (id, date, bank_name, account_name, account_number, op
 ('33333333-3333-3333-3333-333333333333', '2026-05-27', 'BRI Piutang', 'PT Project 6', '555666777', 25000000, 25000000);
 
 -- Vehicle Stocks (2026-05-27)
-INSERT INTO vehicle_stocks (id, date, vehicle_type, brand, model, plate_number, year, status, purchase_price, estimated_sell_price, sell_price) VALUES
-('44444444-4444-4444-4444-444444444441', '2026-05-27', 'Mobil', 'Toyota', 'Avanza', 'B 1234 ABC', 2020, 'Ready', 145000000, 158000000, 0),
-('44444444-4444-4444-4444-444444444442', '2026-05-27', 'Mobil', 'Honda', 'Brio', 'B 7788 XYZ', 2019, 'Ready', 132000000, 145000000, 0),
-('44444444-4444-4444-4444-444444444443', '2026-05-27', 'Motor', 'Yamaha', 'NMAX', 'B 4321 DEF', 2022, 'Ready', 23000000, 27500000, 0),
-('44444444-4444-4444-4444-444444444444', '2026-05-27', 'Motor', 'Honda', 'Beat', 'B 2222 KLM', 2021, 'Servis', 12000000, 14500000, 0);
+INSERT INTO vehicle_stocks (id, vehicle_group_id, date, vehicle_type, brand, model, plate_number, year, status, purchase_price, estimated_sell_price, sell_price) VALUES
+('44444444-4444-4444-4444-444444444441', '44444444-4444-4444-4444-444444444441', '2026-05-27', 'Mobil', 'Toyota', 'Avanza', 'B 1234 ABC', 2020, 'Ready', 145000000, 158000000, 0),
+('44444444-4444-4444-4444-444444444442', '44444444-4444-4444-4444-444444444442', '2026-05-27', 'Mobil', 'Honda', 'Brio', 'B 7788 XYZ', 2019, 'Ready', 132000000, 145000000, 0),
+('44444444-4444-4444-4444-444444444443', '44444444-4444-4444-4444-444444444443', '2026-05-27', 'Motor', 'Yamaha', 'NMAX', 'B 4321 DEF', 2022, 'Ready', 23000000, 27500000, 0),
+('44444444-4444-4444-4444-444444444444', '44444444-4444-4444-4444-444444444444', '2026-05-27', 'Motor', 'Honda', 'Beat', 'B 2222 KLM', 2021, 'Servis', 12000000, 14500000, 0);
+
+-- Vehicle Capital Logs (Patungan)
+INSERT INTO vehicle_capital_logs (vehicle_group_id, date, investor_name, description, amount, type) VALUES
+('44444444-4444-4444-4444-444444444441', '2026-05-27', 'Si A', 'Modal Patungan', 100000000, 'Patungan'),
+('44444444-4444-4444-4444-444444444441', '2026-05-27', 'Si B', 'Modal Patungan', 45000000, 'Patungan'),
+('44444444-4444-4444-4444-444444444442', '2026-05-27', 'Si A', 'Modal Penuh', 132000000, 'Patungan'),
+('44444444-4444-4444-4444-444444444443', '2026-05-27', 'Si C', 'Modal Penuh', 23000000, 'Patungan'),
+('44444444-4444-4444-4444-444444444444', '2026-05-27', 'Si A', 'Modal Penuh', 12000000, 'Patungan');
 
 -- Receivables (2026-05-27)
 INSERT INTO receivables (id, date, customer_name, description, amount, paid_amount, status) VALUES
@@ -45,11 +53,11 @@ INSERT INTO bank_accounts (id, date, bank_name, account_name, account_number, op
 ('33333333-3333-3333-3333-333333333334', '2026-05-28', 'BRI Piutang', 'PT Project 6', '555666777', 25000000, 28000000, '33333333-3333-3333-3333-333333333333');
 
 -- Vehicle Stocks (2026-05-28)
-INSERT INTO vehicle_stocks (date, vehicle_type, brand, model, plate_number, year, status, purchase_price, estimated_sell_price, sell_price, created_from_id) VALUES
-('2026-05-28', 'Mobil', 'Toyota', 'Avanza', 'B 1234 ABC', 2020, 'Ready', 145000000, 158000000, 0, '44444444-4444-4444-4444-444444444441'),
-('2026-05-28', 'Mobil', 'Honda', 'Brio', 'B 7788 XYZ', 2019, 'Booking', 132000000, 145000000, 0, '44444444-4444-4444-4444-444444444442'),
-('2026-05-28', 'Motor', 'Yamaha', 'NMAX', 'B 4321 DEF', 2022, 'Ready', 23000000, 27500000, 0, '44444444-4444-4444-4444-444444444443'),
-('2026-05-28', 'Motor', 'Honda', 'Beat', 'B 2222 KLM', 2021, 'Servis', 12000000, 14500000, 0, '44444444-4444-4444-4444-444444444444');
+INSERT INTO vehicle_stocks (date, vehicle_group_id, vehicle_type, brand, model, plate_number, year, status, purchase_price, estimated_sell_price, sell_price, created_from_id) VALUES
+('2026-05-28', '44444444-4444-4444-4444-444444444441', 'Mobil', 'Toyota', 'Avanza', 'B 1234 ABC', 2020, 'Ready', 145000000, 158000000, 0, '44444444-4444-4444-4444-444444444441'),
+('2026-05-28', '44444444-4444-4444-4444-444444444442', 'Mobil', 'Honda', 'Brio', 'B 7788 XYZ', 2019, 'Booking', 132000000, 145000000, 0, '44444444-4444-4444-4444-444444444442'),
+('2026-05-28', '44444444-4444-4444-4444-444444444443', 'Motor', 'Yamaha', 'NMAX', 'B 4321 DEF', 2022, 'Ready', 23000000, 27500000, 0, '44444444-4444-4444-4444-444444444443'),
+('2026-05-28', '44444444-4444-4444-4444-444444444444', 'Motor', 'Honda', 'Beat', 'B 2222 KLM', 2021, 'Servis', 12000000, 14500000, 0, '44444444-4444-4444-4444-444444444444');
 
 -- Receivables (2026-05-28)
 INSERT INTO receivables (date, customer_name, description, amount, paid_amount, status, created_from_id) VALUES
