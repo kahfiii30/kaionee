@@ -45,17 +45,18 @@ const copyDataFromPreviousDate = async (prevDate, newDate) => {
   // 1. Copy bank_accounts
   const { data: banks } = await supabase.from('bank_accounts').select('*').eq('date', prevDate)
   if (banks && banks.length > 0) {
-    const newBanks = banks.map(b => ({
-      date: newDate,
-      bank_name: b.bank_name,
-      account_name: b.account_name,
-      account_number: b.account_number,
-      opening_balance: b.closing_balance,
-      closing_balance: b.closing_balance, // Transactions haven't happened yet
-      note: b.note,
-      created_from_id: b.id
-    }))
-    await supabase.from('bank_accounts').insert(newBanks)
+    const newBanks = banks.map(b => {
+      const { id, created_at, updated_at, date, ...rest } = b
+      return { 
+        ...rest, 
+        date: newDate, 
+        created_from_id: id, 
+        opening_balance: b.closing_balance,
+        closing_balance: b.closing_balance
+      }
+    })
+    const { error } = await supabase.from('bank_accounts').insert(newBanks)
+    if (error) console.error('Error copying banks:', error)
   }
 
   // 2. Copy vehicle_stocks
