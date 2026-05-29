@@ -38,6 +38,15 @@ export default function Dashboard() {
     return <div className="flex justify-center items-center h-64 text-gray-500 animate-pulse">Memuat dashboard...</div>
   }
 
+  if (!data) {
+    return (
+      <div className="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200">
+        <h3 className="font-bold text-lg mb-2">Gagal Memuat Dashboard</h3>
+        <p>Terjadi kesalahan saat mengambil data dari database. Silakan periksa koneksi internet atau konfigurasi Environment Variables (VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY) di Vercel.</p>
+      </div>
+    )
+  }
+
   // Calculate totals
   const totalPengeluaran = data.expenses.reduce((sum, e) => sum + Number(e.amount), 0)
   
